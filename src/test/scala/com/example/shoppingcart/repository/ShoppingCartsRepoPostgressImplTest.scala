@@ -16,33 +16,27 @@ import java.util.UUID
 
 class ShoppingCartsRepoPostgressImplTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
-  private var postgres: EmbeddedPostgres = _
-  private implicit var transactor: Transactor[IO] = _
-  private var shoppingCartsRepoPostgresImpl: ShoppingCartsRepoPostgressImpl[IO] = _
+  private val postgres: EmbeddedPostgres = EmbeddedPostgres.builder().start()
+  private implicit val transactor: Transactor[IO] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", // driver classname
+    postgres.getJdbcUrl("postgres"), // connect URL (driver-specific)
+    "postgres", // user
+    "postgres" // password
+  )
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    postgres = EmbeddedPostgres.builder().start()
-    transactor = Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver", // driver classname
-      postgres.getJdbcUrl("postgres"), // connect URL (driver-specific)
-      "postgres", // user
-      "postgres" // password
-    )
-    shoppingCartsRepoPostgresImpl = new ShoppingCartsRepoPostgressImpl[IO]
+  private val shoppingCartsRepoPostgresImpl = new ShoppingCartsRepoPostgressImpl[IO]
 
-    sql"""CREATE TABLE shopping_cart (
-         |  _id SERIAL NOT NULL,
-         |  id VARCHAR(36) NOT NULL,
-         |  product JSON NOT NULL,
-         |  PRIMARY KEY (id)
-         |)""".stripMargin
-      .update
-      .run
-      .transact(transactor)
-      .unsafeRunSync()
-    ()
-  }
+  sql"""CREATE TABLE shopping_cart (
+       |  _id SERIAL NOT NULL,
+       |  id VARCHAR(36) NOT NULL,
+       |  product JSON NOT NULL,
+       |  PRIMARY KEY (id)
+       |)""".stripMargin
+    .update
+    .run
+    .transact(transactor)
+    .unsafeRunSync()
+  ()
 
   it should "Create a shoppingcart in" in {
     // given a shoppingcart sc
